@@ -1,0 +1,320 @@
+{% extends "base.html" %}
+
+{% block title %}
+User Theme
+{% endblock %}
+
+{% block head %}
+<style>
+    .layui-form-label {
+        width: 120px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="layui-container">
+    <div class="layui-card">
+        <div class="layui-card-header">Change Theme Settings</div>
+        <div class="layui-card-body">
+            <div class="layui-form-item">
+                <div class="layui-form-item">
+                    <label class="layui-form-label">User</label>
+                    <div class="layui-input-block">
+                        <select id="user" class="input-stretch" onchange="changeUser(null, null);"></select>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">Version</label>
+                    <div class="layui-input-block">
+                        <select id="version" class="input-stretch" onchange="getUser(null);"></select>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">FRAME</label>
+                    <div class="layui-input-block">
+                        <select id="frame" class="input-stretch"></select>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">TURNTABLE</label>
+                    <div class="layui-input-block">
+                        <select id="turntable" class="input-stretch"></select>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">EXPLOSION</label>
+                    <div class="layui-input-block">
+                        <select id="burst" class="input-stretch"></select>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">MUSICSELECTBGM</label>
+                    <div class="layui-input-block">
+                        <select id="bgm" class="input-stretch"></select>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">LANECOVER</label>
+                    <div class="layui-input-block">
+                        <select id="towel" class="input-stretch"></select>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">CATEGORYVOICE</label>
+                    <div class="layui-input-block">
+                        <select id="voice" class="input-stretch"></select>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">NOTES</label>
+                    <div class="layui-input-block">
+                        <select id="noteskin" class="input-stretch"></select>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">FULLCOMBO</label>
+                    <div class="layui-input-block">
+                        <select id="full_combo" class="input-stretch"></select>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">KEYBEAM</label>
+                    <div class="layui-input-block">
+                        <select id="beam" class="input-stretch"></select>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">JUDGESTRING</label>
+                    <div class="layui-input-block">
+                        <select id="judge" class="input-stretch"></select>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">GRAPHAREA</label>
+                    <div class="layui-input-block">
+                        <select id="pacemaker" class="input-stretch"></select>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <button class="layui-btn" lay-submit lay-filter="form" id="change" onclick="change();">Change</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block script %}
+<script>
+    let themeData = null;
+    const form = layui.form;
+
+    layui.use('form', function () {
+        form.on('submit(useridform)', function (data) {
+            let loadLayer = layer.load(1, {
+                shade: [0.1, '#fff'] //0.1透明度的白色背景
+            });
+            $.ajax({
+                type: "POST",//方法类型
+                dataType: "json",//预期服务器返回的数据类型
+                url: "/plugin/iidx/gettheme",//url
+                data: data.field,
+                success: function (result) {
+                    if (result.success === 1) {
+                        for ([type, value] of Object.entries(result.data)) {
+                            let select = document.getElementById(type);
+                            if (select != null) {
+                                document.getElementById(type).options[value].selected = true;
+                            }
+                        }
+
+                        $("#userid").val(data.field.userid);
+                        $("#version").val(data.field.version);
+
+                        form.render();
+                        layer.msg('Linked！');
+                        $('#change').attr("disabled", false);
+                    } else {
+                        layer.msg(result.error_msg);
+                    }
+                },
+                error: function () {
+                    layer.msg('Server Error！');
+                },
+                complete: function () {
+                    layer.close(loadLayer);
+                }
+            });
+            return false;
+        });
+    });
+
+    $().ready(function () {
+        let loadLayer = layer.load(1, {
+            shade: [0.1, '#fff']
+        });
+        $.getJSON("/static/plugin/iidx/themeData.json", function (data) {
+            themeData = data;
+
+            // load select options
+            for ([type, list] of Object.entries(themeData)) {
+                list.forEach(function (obj, index) {
+                    $('#' + type).append($('<option>', {
+                        value: index,
+                        text: obj
+                    }));
+                });
+                form.render();
+            }
+        });
+        $.ajax({
+            type: "POST",
+            dataType: "json",
+            url: "/plugin/iidx/getversions",
+            success: function (result) {
+                if (result.success === 1) {
+                    result.data.forEach(function (version, index) {
+                        $('#version').append($('<option>', {
+                            value: version,
+                            text: version
+                        }));
+                        getUser(result.data[0]);
+                    });
+                } else {
+                    layer.msg(result.error_msg);
+                }
+            },
+            error: function () {
+                layer.msg('Server Error on getting version！');
+            },
+            complete: function () {
+                layer.close(loadLayer);
+            }
+        });
+        layer.close(loadLayer);
+    });
+
+    function getUser(version) {
+        if (version === null) {
+            version = $("#version").val();
+        }
+
+        let loadLayer = layer.load(1, {
+            shade: [0.1, '#fff'] //0.1透明度的白色背景
+        });
+        $.ajax({
+            type: "POST",
+            dataType: "json",
+            url: "/plugin/iidx/getcards",
+            data: {
+                version: version
+            },
+            success: function (result) {
+                if (result.success === 1) {
+                    result.data.forEach(function (userInfo, index) {
+                        $('#user').append($('<option>', {
+                            value: userInfo.userid,
+                            text: userInfo.name
+                        }));
+                    });
+                    if (result.data.length === 0){
+                        layer.msg("No user found.");
+                    }else{
+                        changeUser(result.data[0].userid, version);
+                    }
+                } else {
+                    layer.msg(result.error_msg);
+                }
+            },
+            error: function () {
+                layer.msg('Server Error on getting cards！');
+            },
+            complete: function () {
+                layer.close(loadLayer);
+            }
+        });
+    }
+
+    function changeUser(userid, version) {
+        if (userid === null) {
+            userid = $("#user").val();
+        }
+        if (version === null) {
+            version = $("#version").val();
+        }
+
+        let loadLayer = layer.load(1, {
+            shade: [0.1, '#fff']
+        });
+        $.ajax({
+            type: "POST",
+            dataType: "json",
+            url: "/plugin/iidx/gettheme",
+            data: {
+                userid: userid,
+                version: version
+            },
+            success: function (result) {
+                if (result.success === 1) {
+                    for ([type, value] of Object.entries(result.data)) {
+                        $("#" + type).val(value).change();
+                    }
+                } else {
+                    layer.msg(result.error_msg);
+                }
+            },
+            error: function () {
+                layer.msg('Server Error！');
+            },
+            complete: function () {
+                layer.close(loadLayer);
+            }
+        });
+    }
+
+    function change() {
+        let loadLayer = layer.load(1, {
+            shade: [0.1, '#fff']
+        });
+        $.ajax({
+            type: "POST",
+            dataType: "json",
+            url: "/plugin/iidx/theme",
+            data: {
+                userid: $("#user").val(),
+                version: $("#version").val(),
+                frame: $("#frame").prop('selectedIndex'),
+                turntable: $("#turntable").prop('selectedIndex'),
+                burst: $("#burst").prop('selectedIndex'),
+                bgm: $("#bgm").prop('selectedIndex'),
+                towel: $("#towel").prop('selectedIndex'),
+                voice: $("#voice").prop('selectedIndex'),
+                noteskin: $("#noteskin").prop('selectedIndex'),
+                full_combo: $("#full_combo").prop('selectedIndex'),
+                beam: $("#beam").prop('selectedIndex'),
+                judge: $("#judge").prop('selectedIndex'),
+                pacemaker: $("#pacemaker").prop('selectedIndex')
+            },
+            success: function (result) {
+                if (result.success === 1) {
+                    layer.msg('Changed！');
+                } else {
+                    layer.msg(result.error_msg);
+                }
+            },
+            error: function () {
+                layer.msg('Server Error！');
+
+            },
+            complete: function () {
+                layer.close(loadLayer);
+            }
+        });
+        return false;
+    }
+</script>
+{% endblock %}

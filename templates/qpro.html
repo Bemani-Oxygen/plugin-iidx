@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+
+{% block title %}
+Change QPro
+{% endblock %}
+
+{% block head %}
+<style>
+    .layui-form-label {
+        width: 120px;
+    }
+</style>
+<link rel="stylesheet" type="text/css" href="/static/plugin/iidx/css/main.dc2fe9b3.css">
+{% endblock %}
+
+{% block content %}
+<div class="layui-container">
+    <div class="layui-card">
+        <div class="layui-card-header">Change QPro</div>
+        <div class="layui-card-body">
+            <div id="root">
+                <div id="layout-content">
+                    <div class="qpro">
+                        <img id="qp_head_b" alt class="qp-head" src="">
+                        <img id="qp_hair_b" alt class="qp-hair" src="">
+                        <img id="qp_leg_l_lower" alt class="qp-leg-l" src="">
+                        <img id="qp_leg_l_upper" alt class="qp-leg-l" src="">
+                        <img id="qp_arm_r_lower" alt class="qp-arm-r" src="">
+                        <img id="qp_arm_r_upper" alt class="qp-arm-r" src="">
+                        <img id="qp_hand_r" alt class="qp-hand-r" src="">
+                        <img id="qp_leg_r_lower" alt class="qp-leg-r" src="">
+                        <img id="qp_leg_r_upper" alt class="qp-leg-r" src="">
+                        <img id="qp_body_b" alt class="qp-body" src="">
+                        <img id="qp_body_f" alt class="qp-body" src="">
+                        <img id="qp_face_neutral" alt class="qp-face" src="">
+                        <img id="qp_hair_f" alt class="qp-hair" src="">
+                        <img id="qp_head_f" alt class="qp-head" src="">
+                        <img id="qp_arm_l_lower" alt class="qp-arm-l" src="">
+                        <img id="qp_arm_l_upper" alt class="qp-arm-l" src="">
+                        <img id="qp_hand_l" alt class="qp-hand-l" src="">
+                    </div>
+                    <div>
+                        <label class="layui-form-label">User</label>
+                        <select id="user" class="input-stretch" onchange="changeUser(null, null);"></select>
+                    </div>
+                    <div>
+                        <label class="layui-form-label">Version</label>
+                        <select id="version" class="input-stretch" onchange="getUser(null);"></select>
+                    </div>
+                    <div>
+                        <label class="h-margin v-margin stretch">Head</label>
+                        <select id="head" class="input-stretch" onchange="changeQPro('head');"></select>
+                    </div>
+                    <div>
+                        <label class="h-margin v-margin stretch">Hair</label>
+                        <select id="hair" class="input-stretch" onchange="changeQPro('hair');"></select>
+                    </div>
+                    <div>
+                        <label class="h-margin v-margin stretch">Hand</label>
+                        <select id="hand" class="input-stretch" onchange="changeQPro('hand');"></select>
+                    </div>
+                    <div>
+                        <label class="h-margin v-margin stretch">Face</label>
+                        <select id="face" class="input-stretch" onchange="changeQPro('face');"></select>
+                    </div>
+                    <div>
+                        <label class="h-margin v-margin stretch">Body</label>
+                        <select id="body" class="input-stretch" onchange="changeQPro('body');"></select>
+                    </div>
+                    <div>
+                        <button class="pas-light-bg pri-bg-active pri-border pri-text wht-text-active r-margin-hairline" id="save" onclick="save();">Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+    let qproData = null;
+    let qpro = {
+        "head": ["qp_head_b", "qp_head_f"],
+        "hair": ["qp_hair_b", "qp_hair_f"],
+        "face": ["qp_face_neutral"],
+        "hand": ["qp_hand_r", "qp_hand_l"],
+        "body": ["qp_body_b", "qp_body_f", "qp_leg_l_lower", "qp_leg_l_upper", "qp_leg_r_lower", "qp_leg_r_upper", "qp_arm_l_lower", "qp_arm_l_upper", "qp_arm_r_lower", "qp_arm_r_upper"]
+    };
+
+    layui.use('form', function () {
+        let form = layui.form;
+
+        form.on('submit(useridform)', function (data) {
+
+            return false;
+        });
+    });
+
+    $().ready(function () {
+        let loadLayer = layer.load(1, {
+            shade: [0.1, '#fff'] //0.1透明度的白色背景
+        });
+        $.getJSON("/static/plugin/iidx/qproData.json", function (data) {
+            qproData = data;
+
+            // load select options
+            for ([type, list] of Object.entries(qproData)) {
+                list.forEach(function (obj, index) {
+                    $('#' + type).append($('<option>', {
+                        value: index,
+                        text: obj.name
+                    }));
+                });
+            }
+        });
+        $.ajax({
+            type: "POST",
+            dataType: "json",
+            url: "/plugin/iidx/getversions",
+            success: function (result) {
+                if (result.success === 1) {
+                    result.data.forEach(function (version, index) {
+                        $('#version').append($('<option>', {
+                            value: version,
+                            text: version
+                        }));
+                        getUser(result.data[0]);
+                    });
+                } else {
+                    layer.msg(result.error_msg);
+                }
+            },
+            error: function () {
+                layer.msg('Server Error on getting version！');
+            },
+            complete: function () {
+                layer.close(loadLayer);
+            }
+        });
+        layer.close(loadLayer);
+    });
+
+    function getUser(version) {
+        if (version === null) {
+            version = $("#version").val();
+        }
+
+        let loadLayer = layer.load(1, {
+            shade: [0.1, '#fff'] //0.1透明度的白色背景
+        });
+        $.ajax({
+            type: "POST",
+            dataType: "json",
+            url: "/plugin/iidx/getcards",
+            data: {
+                version: version
+            },
+            success: function (result) {
+                if (result.success === 1) {
+                    result.data.forEach(function (userInfo, index) {
+                        $('#user').append($('<option>', {
+                            value: userInfo.userid,
+                            text: userInfo.name
+                        }));
+                    });
+                    if (result.data.length === 0){
+                        layer.msg("No user found.");
+                    }else{
+                        changeUser(result.data[0].userid, version);
+                    }
+                } else {
+                    layer.msg(result.error_msg);
+                }
+            },
+            error: function () {
+                layer.msg('Server Error on getting cards！');
+            },
+            complete: function () {
+                layer.close(loadLayer);
+            }
+        });
+    }
+
+    function changeUser(userid, version) {
+        if (userid === null) {
+            userid = $("#user").val();
+        }
+        if (version === null) {
+            version = $("#version").val();
+        }
+
+        let loadLayer = layer.load(1, {
+            shade: [0.1, '#fff']
+        });
+        $.ajax({
+            type: "POST",
+            dataType: "json",
+            url: "/plugin/iidx/getqpro",
+            data: {
+                userid: userid,
+                version: version
+            },
+            success: function (result) {
+                if (result.success === 1) {
+                    for ([type, value] of Object.entries(result.data)) {
+                        $("#" + type).val(value).change();
+                        changeQPro(type);
+                    }
+                } else {
+                    layer.msg(result.error_msg);
+                }
+            },
+            error: function () {
+                layer.msg('Server Error！');
+            },
+            complete: function () {
+                layer.close(loadLayer);
+            }
+        });
+    }
+
+    function changeQPro(name) {
+        for ([type, list] of Object.entries(qpro)) {
+            let select = document.getElementById(name);
+            let index = select.selectedIndex;
+
+            if (name === type) {
+                let ifs = qproData[name][index]['ifs'].replace('.ifs', '');
+                list.forEach(function (partName, index) {
+                    document.getElementById(partName).src = "/static/plugin/iidx/images/" + ifs + "/" + partName + ".png";
+                });
+            }
+        }
+    }
+
+    function save() {
+        let loadLayer = layer.load(1, {
+            shade: [0.1, '#fff']
+        });
+        $.ajax({
+            type: "POST",
+            dataType: "json",
+            url: "/plugin/iidx/qpro",
+            data: {
+                userid: $("#user").val(),
+                version: $("#version").val(),
+                head: $("#head").prop('selectedIndex'),
+                hair: $("#hair").prop('selectedIndex'),
+                face: $("#face").prop('selectedIndex'),
+                hand: $("#hand").prop('selectedIndex'),
+                body: $("#body").prop('selectedIndex'),
+            },
+            success: function (result) {
+                if (result.success === 1) {
+                    layer.msg('Saved！');
+                } else {
+                    layer.msg(result.error_msg);
+                }
+            },
+            error: function () {
+                layer.msg('Server Error！');
+
+            },
+            complete: function () {
+                layer.close(loadLayer);
+            }
+        });
+        return false;
+    }
+</script>
+{% endblock %}
